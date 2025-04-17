@@ -47,8 +47,8 @@ func (r *accountRepository) BeginTx(ctx context.Context) (*sql.Tx, error) {
 
 func (r *accountRepository) CreateAccount(ctx context.Context, account *models.Account) error {
 	queryInsert := `
-		INSERT INTO accounts (name, nik, no_hp, no_rekening, saldo)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO accounts (name, nik, no_hp, saldo)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -56,13 +56,13 @@ func (r *accountRepository) CreateAccount(ctx context.Context, account *models.A
 		UPDATE accounts
 		SET no_rekening = $1
 		WHERE id = $2
+
 	`
 
 	err := r.db.QueryRowContext(ctx, queryInsert,
 		account.Name,
 		account.NIK,
 		account.NoHP,
-		account.NoRekening,
 		account.Saldo,
 	).Scan(&account.ID, &account.CreatedAt, &account.UpdatedAt)
 
