@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
 )
 
 type AccountUsecase interface {
@@ -54,10 +56,16 @@ func (u *accountUsecase) CreateAccount(ctx context.Context, req *models.CreateAc
 		return nil, models.AccountWithNoHpKIsExistErr
 	}
 
+	// generate no rekening from timestamp
+	currentTime := time.Now()
+	unixTime := currentTime.Unix()
+	noRekening := strconv.FormatInt(unixTime, 10)
+
 	account := &models.Account{
-		Name: req.Name,
-		NIK:  req.NIK,
-		NoHP: req.NoHP,
+		Name:       req.Name,
+		NIK:        req.NIK,
+		NoHP:       req.NoHP,
+		NoRekening: noRekening,
 	}
 
 	err = u.accountRepo.CreateAccount(ctx, account)

@@ -22,6 +22,11 @@ $ go mod tidy
 Copy and rename `.env.development` to `.env` and ensure all the propeties correct.
 
 ### Migration Database
+Install goose
+```
+$ go install github.com/pressly/goose/v3/cmd/goose@latest
+
+```
 Migrate up using this command
 ```
 $ goose -dir migrations postgres "user=postgres password=root dbname=postgres sslmode=disable" up
