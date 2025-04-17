@@ -5,7 +5,6 @@ import (
 	"accounts-service/utils"
 	"context"
 	"database/sql"
-	"fmt"
 )
 
 const (
@@ -37,7 +36,12 @@ func (r *accountRepository) BeginTx(ctx context.Context) (*sql.Tx, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		r.logger.Error("Error beginning transaction: %v", err)
-		return nil, fmt.Errorf("error beginning transaction: %w", err)
+		return nil, utils.NewRemark(
+			"Error beginning transaction",
+			models.CreateTransactionDBError,
+			"",
+			err,
+		)
 	}
 	return tx, nil
 }
@@ -58,7 +62,12 @@ func (r *accountRepository) CreateAccount(ctx context.Context, account *models.A
 
 	if err != nil {
 		r.logger.Error("Error creating account: %v", err)
-		return fmt.Errorf("error creating account: %w", err)
+		return utils.NewRemark(
+			"Error creating account",
+			models.CreateAccountError,
+			"",
+			err,
+		)
 	}
 
 	return nil
@@ -88,7 +97,12 @@ func (r *accountRepository) GetAccountByNoRekening(ctx context.Context, no_reken
 			return nil, nil
 		}
 		r.logger.Error("Error getting account by no rekening: %v", err)
-		return nil, fmt.Errorf("error getting account by no rekening: %w", err)
+		return nil, utils.NewRemark(
+			"Error getting account by no rekening",
+			models.GetAccountError,
+			"no_rekening",
+			err,
+		)
 	}
 
 	return &account, nil
@@ -118,7 +132,12 @@ func (r *accountRepository) GetAccountByNik(ctx context.Context, nik string) (*m
 			return nil, nil
 		}
 		r.logger.Error("Error getting account by NIK: %v", err)
-		return nil, fmt.Errorf("error getting account by NIK: %w", err)
+		return nil, utils.NewRemark(
+			"Error getting account by no nik",
+			models.GetAccountError,
+			"no_rekening",
+			err,
+		)
 	}
 
 	return &account, nil
@@ -148,7 +167,12 @@ func (r *accountRepository) GetAccountByNoHp(ctx context.Context, no_hp string) 
 			return nil, nil
 		}
 		r.logger.Error("Error getting account by no hp: %v", err)
-		return nil, fmt.Errorf("error getting account by no hp: %w", err)
+		return nil, utils.NewRemark(
+			"Error getting account by no no_hp",
+			models.GetAccountError,
+			"no_rekening",
+			err,
+		)
 	}
 
 	return &account, nil
@@ -169,8 +193,20 @@ func (r *accountRepository) UpdateSaldo(ctx context.Context, tx *sql.Tx, account
 	}
 
 	if err != nil {
+		typeTransaction := "credit/tabung"
+		if nominal < 0 {
+			typeTransaction = "debit/tarik"
+		}
 		r.logger.Error("Error updating account saldo: %v", err)
-		return fmt.Errorf("error updating account saldo: %w", err)
+		return utils.NewRemark(
+			"error updating account saldo",
+			models.UpdateSaldoError,
+			"no_rekening",
+			map[string]interface{}{
+				"error": err,
+				"type":  typeTransaction,
+			},
+		)
 	}
 
 	return nil

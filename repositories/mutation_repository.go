@@ -5,7 +5,6 @@ import (
 	"accounts-service/utils"
 	"context"
 	"database/sql"
-	"fmt"
 )
 
 type MutationRepository interface {
@@ -50,7 +49,15 @@ func (r *mutationRepository) CreateMutation(ctx context.Context, tx *sql.Tx, mut
 
 	if err != nil {
 		r.logger.Error("Error creating mutation: %v", err)
-		return fmt.Errorf("error creating mutation: %w", err)
+		return utils.NewRemark(
+			"Error creating mutation",
+			models.CreateMutationError,
+			"no_rekening",
+			map[string]interface{}{
+				"error": err,
+				"type":  mutation.Type,
+			},
+		)
 	}
 
 	return nil

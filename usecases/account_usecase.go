@@ -6,7 +6,6 @@ import (
 	"accounts-service/utils"
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -38,7 +37,7 @@ func (u *accountUsecase) CreateAccount(ctx context.Context, req *models.CreateAc
 	existingAccount, err := u.accountRepo.GetAccountByNik(ctx, req.NIK)
 	if err != nil {
 		u.logger.Error("Error checking existing account: %v", err)
-		return nil, fmt.Errorf("error checking existing account: %w", err)
+		return nil, err
 	}
 
 	if existingAccount != nil {
@@ -71,7 +70,7 @@ func (u *accountUsecase) CreateAccount(ctx context.Context, req *models.CreateAc
 	err = u.accountRepo.CreateAccount(ctx, account)
 	if err != nil {
 		u.logger.Error("Error creating account: %v", err)
-		return nil, fmt.Errorf("error creating account: %w", err)
+		return nil, err
 	}
 
 	return account, nil
@@ -81,7 +80,7 @@ func (u *accountUsecase) GetAccountByNoRekening(ctx context.Context, noRekening 
 	account, err := u.accountRepo.GetAccountByNoRekening(ctx, noRekening)
 	if err != nil {
 		u.logger.Error("Error getting account by no rekening: %v", err)
-		return nil, fmt.Errorf("error getting account by no rekening: %w", err)
+		return nil, err
 	}
 
 	if account == nil {
@@ -95,11 +94,11 @@ func (u *accountUsecase) GetSaldo(ctx context.Context, noRekening string) (*mode
 	account, err := u.accountRepo.GetAccountByNoRekening(ctx, noRekening)
 	if err != nil {
 		u.logger.Error("Error getting account saldo: %v", err)
-		return nil, fmt.Errorf("error getting account saldo: %w", err)
+		return nil, err
 	}
 
 	if account == nil {
-		return nil, errors.New("account not found")
+		return nil, models.AccountWithNoRekeningNotFoundErr
 	}
 
 	return &models.SaldoResponse{
@@ -113,7 +112,7 @@ func (u *accountUsecase) Debit(ctx context.Context, req *models.TransactionReque
 	tx, err := u.accountRepo.BeginTx(ctx)
 	if err != nil {
 		u.logger.Error("Error starting transaction: %v", err)
-		return fmt.Errorf("error starting transaction: %w", err)
+		return err
 	}
 
 	defer func() {
@@ -128,7 +127,7 @@ func (u *accountUsecase) Debit(ctx context.Context, req *models.TransactionReque
 	account, err := u.accountRepo.GetAccountByNoRekening(ctx, req.NoRekening)
 	if err != nil {
 		u.logger.Error("Error getting account for debit/tarik: %v", err)
-		return fmt.Errorf("error getting account for debit/tarik: %w", err)
+		return err
 	}
 
 	if account == nil {
@@ -144,7 +143,7 @@ func (u *accountUsecase) Debit(ctx context.Context, req *models.TransactionReque
 	err = u.accountRepo.UpdateSaldo(ctx, tx, account.ID, -req.Nominal)
 	if err != nil {
 		u.logger.Error("Error updating saldo for debit/tarik: %v", err)
-		return fmt.Errorf("error updating saldo for debit/tarik: %w", err)
+		return err
 	}
 
 	// Create mutation record
@@ -158,13 +157,13 @@ func (u *accountUsecase) Debit(ctx context.Context, req *models.TransactionReque
 	err = u.mutationRepo.CreateMutation(ctx, tx, mutation)
 	if err != nil {
 		u.logger.Error("Error creating mutation for debit/tarik: %v", err)
-		return fmt.Errorf("error creating mutation for debit/tarik: %w", err)
+		return err
 	}
 
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
 		u.logger.Error("Error committing transaction: %v", err)
-		return fmt.Errorf("error committing transaction: %w", err)
+		return err
 	}
 
 	return nil
@@ -175,7 +174,7 @@ func (u *accountUsecase) Credit(ctx context.Context, req *models.TransactionRequ
 	tx, err := u.accountRepo.BeginTx(ctx)
 	if err != nil {
 		u.logger.Error("Error starting transaction: %v", err)
-		return fmt.Errorf("error starting transaction: %w", err)
+		return err
 	}
 
 	defer func() {
@@ -190,7 +189,7 @@ func (u *accountUsecase) Credit(ctx context.Context, req *models.TransactionRequ
 	account, err := u.accountRepo.GetAccountByNoRekening(ctx, req.NoRekening)
 	if err != nil {
 		u.logger.Error("Error getting account for credit/tabung: %v", err)
-		return fmt.Errorf("error getting account for credit/tabung: %w", err)
+		return err
 	}
 	if account == nil {
 		return models.AccountWithNoRekeningNotFoundErr
@@ -200,7 +199,7 @@ func (u *accountUsecase) Credit(ctx context.Context, req *models.TransactionRequ
 	err = u.accountRepo.UpdateSaldo(ctx, tx, account.ID, req.Nominal)
 	if err != nil {
 		u.logger.Error("Error updating saldo for credit/tabung: %v", err)
-		return fmt.Errorf("error updating saldo for credit/tabung: %w", err)
+		return err
 	}
 
 	// Create mutation record
@@ -214,13 +213,18 @@ func (u *accountUsecase) Credit(ctx context.Context, req *models.TransactionRequ
 	err = u.mutationRepo.CreateMutation(ctx, tx, mutation)
 	if err != nil {
 		u.logger.Error("Error creating mutation for credit/tabung: %v", err)
-		return fmt.Errorf("error creating mutation for credit/tabung: %w", err)
+		return err
 	}
 
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
 		u.logger.Error("Error committing transaction: %v", err)
-		return fmt.Errorf("error committing transaction: %w", err)
+		return utils.NewRemark(
+			"Error commit transaction",
+			models.CreateMutationError,
+			"",
+			err,
+		)
 	}
 
 	return nil
