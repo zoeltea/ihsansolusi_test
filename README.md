@@ -3,7 +3,7 @@ It is a repository for assessment BE on ihsansolusi
 
 ## Requirements
 - [Go]
-- [Docker (Optional)]
+- [Docker]
 
 ## Getting Started
 This section will guide you to get the project up and running
@@ -14,9 +14,15 @@ This service need to install all of required dependencies
 $ go mod tidy
 ```
 
-### Running docker for postgres
-
-
+### Running Docker For Postgres
+Using this command to build image
+```
+$ docker build -t postgres ./deploy
+```
+also create container 
+```
+$ docker run -d -p 5432:5432 --name postgres-db postgres
+```
 
 ### Application Properties or Environment
 Copy and rename `.env.development` to `.env` and ensure all the propeties correct.
