@@ -58,13 +58,14 @@ Create `launch.json` and apply with this
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "app debug",
+            "name": "Launch Package",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/cmd/github.com/lapakgaming/go-archetype/.env",
+            "envFile": "${workspaceFolder}/.env",
         }
     ]
 }
